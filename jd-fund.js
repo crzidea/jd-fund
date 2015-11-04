@@ -13,7 +13,7 @@ var table = new Table({
 });
 
 var list = [];
-function fetchPage(page) {
+function fetchList(page) {
   var pageUrl = config.urls.list + '?' + qs.stringify({page: page});
   return fetchToSuccess(pageUrl)
   .then(function(res) {
@@ -22,7 +22,7 @@ function fetchPage(page) {
   .then(function(body) {
     var $ = cheerio.load(body);
     var $rows = $('.bill-wrap .kind-main .fund-wrap table tr.sec-tr');
-    var details = [];
+    var detailPromises = [];
     // .map() != Array.prototype.map
     //for (var i = 0, l = $rows.length; i < l; i++) {
       //var row = $rows[i];
@@ -32,30 +32,39 @@ function fetchPage(page) {
       data.code = $($cols[0]).text().trim();
       data.name = $($cols[1]).text().trim();
       data.lastMonth = $($cols[5]).text().trim();
-      var query = {fundCode: data.code}
+      data.detail = [];
+      var detailPromise = fetchDetail(data.code, data.detail);
+      list.push(data);
+      detailPromises.push(detailPromise);
+    });
+    return Promise.all(detailPromises);
+  })
+}
+
+function fetchDetail(code, list) {
+  var promises = [];
+  for (var i = 0, l = 3; i < l; i++) {
+    (function(i) {
+      var query = {fundCode: code, pageIndex: i + 1};
       var detailUrl = config.urls.history + '?' + qs.stringify(query);
-      data.detail = fetchToSuccess(detailUrl)
+      var promise = fetchToSuccess(detailUrl)
       .then(function(res) {
         return res.text();
       })
       .then(function(body) {
         var $ = cheerio.load(body);
         var $rows = $('tbody tr');
-        var list = [];
         for (var i = 0, l = $rows.length; i < l; i++) {
           var row = $rows[i];
           var $cols = $(row).find('td');
           var value = +$($cols[1]).text().trim();
           list.push(value);
         }
-        data.detail = list;
-        return list;
       })
-      list.push(data);
-      details.push(data.detail);
-    });
-    return Promise.all(details);
-  })
+      promises.push(promise);
+    }(i));
+  }
+  return Promise.all(promises);
 }
 
 function fetchToSuccess(url) {
@@ -68,17 +77,12 @@ function fetchToSuccess(url) {
   });
 }
 
-var loaderChain = Promise.resolve();
+var loaderList = [];
 for (var i = 0, l = 10; i < l; i++) {
-  (function(i) {
-    loaderChain = loaderChain.then(function() {
-      return fetchPage(i);
-    });
-  }(i));
+    loaderList.push(fetchList(i+1));
 }
 
-//Promise.all(loaderPages)
-loaderChain
+Promise.all(loaderList)
 .then(function() {
   list.forEach(function(fund) {
     var valueToday = fund.detail[0];

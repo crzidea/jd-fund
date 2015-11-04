@@ -8,6 +8,7 @@
     "近一个月涨幅"
   ],
   "urls": {
+    "list": "http://list.jr.jd.com/fundlist/1-11-112.htm?sortType=7&sort=fund_nav_yearly_increased_rate&pub=0&page=2",
     "list": "http://list.jr.jd.com/fundlist/1-11-112.htm",
     "history": "http://list.jr.jd.com/fund/detail/tab/netvalue?fundCode=000063&&pageIndex=2",
     "history": "http://list.jr.jd.com/fund/detail/tab/netvalue"
