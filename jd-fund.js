@@ -71,10 +71,14 @@ function fetchToSuccess(url) {
   return fetch(url)
   .then(function(res) {
     if (res.status >= 400) {
-      return fetchToSuccess(url);
+      throw Error('HTTP status code should not be greater than 400');
     }
     return res;
-  });
+  })
+  .catch(function(err) {
+    console.error(err);
+    return fetchToSuccess(url);
+  })
 }
 
 var loaderList = [];
