@@ -68,7 +68,12 @@ function fetchDetail(code, list) {
 }
 
 function fetchToSuccess(url) {
-  return fetch(url)
+  return fetch(
+    url,
+    {
+      timeout: 500
+    }
+  )
   .then(function(res) {
     if (res.status >= 400) {
       throw Error('HTTP status code should not be greater than 400');
