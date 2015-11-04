@@ -1,0 +1,15 @@
+{
+  "columns": [
+    "基金代码",
+    "基金名称",
+    "小于今天的天数",
+    "统计天数",
+    "差值",
+    "近一个月涨幅"
+  ],
+  "urls": {
+    "list": "http://list.jr.jd.com/fundlist/1-11-112.htm",
+    "history": "http://list.jr.jd.com/fund/detail/tab/netvalue?fundCode=000063&&pageIndex=2",
+    "history": "http://list.jr.jd.com/fund/detail/tab/netvalue"
+  }
+}
