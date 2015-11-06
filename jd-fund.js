@@ -14,7 +14,10 @@ var table = new Table({
 
 var list = [];
 function fetchList(page) {
-  var pageUrl = config.urls.list + '?' + qs.stringify({page: page});
+  var pageUrl = config.urls.list + '?' +
+    qs.stringify({
+      page: page,
+    });
   return fetchToSuccess(pageUrl)
   .then(function(res) {
     return res.text();
@@ -67,27 +70,32 @@ function fetchDetail(code, list) {
   return Promise.all(promises);
 }
 
+var queue = Promise.resolve();
 function fetchToSuccess(url) {
-  return fetch(
-    url,
-    {
-      timeout: 500
-    }
-  )
-  .then(function(res) {
-    if (res.status >= 400) {
-      throw Error('HTTP status code should not be greater than 400');
-    }
-    return res;
-  })
-  .catch(function(err) {
-    console.error(err);
-    return fetchToSuccess(url);
-  })
+  queue = queue.then(function(data) {
+    return fetch(
+      url,
+      {
+        timeout: 500
+      }
+    )
+    .then(function(res) {
+      if (res.status >= 400) {
+        throw Error('HTTP status code should not be greater than 400');
+      }
+      return res;
+    })
+    .catch(function(err) {
+      console.error(err);
+      queue = Promise.resolve();
+      return fetchToSuccess(url);
+    })
+  });
+  return queue;
 }
 
 var loaderList = [];
-for (var i = 0, l = 10; i < l; i++) {
+for (var i = 0, l = 30; i < l; i++) {
     loaderList.push(fetchList(i+1));
 }
 
@@ -106,9 +114,8 @@ Promise.all(loaderList)
     var min = _.min(fund.detail);
     fund.difference = max - min;
   });
-  list.sort(function(a, b) {
-    return b.lessThan - a.lessThan;
-  });
+  list = _.unique(list, 'code');
+  list = _.sortByOrder(list, ['lessThan', 'difference'], ['desc', 'asc']);
 
   for (var i = 0, l = list.length; i < l; i++) {
     var record = list[i];
