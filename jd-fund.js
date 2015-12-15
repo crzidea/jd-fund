@@ -35,8 +35,13 @@ function fetchList(page) {
       data.code = $($cols[0]).text().trim();
       data.name = $($cols[1]).text().trim();
       data.lastMonth = $($cols[5]).text().trim();
-      data.detail = [];
-      var detailPromise = fetchDetail(data.code, data.detail);
+      if (/^-/.test(data.lastMonth)) {
+        return;
+      }
+      var detailPromise = fetchDetail(data.code)
+      .then(function(list) {
+        data.detail = list;
+      });
       list.push(data);
       detailPromises.push(detailPromise);
     });
@@ -44,7 +49,7 @@ function fetchList(page) {
   })
 }
 
-function fetchDetail(code, list) {
+function fetchDetail(code) {
   var promises = [];
   for (var i = 0, l = 3; i < l; i++) {
     (function(i) {
@@ -57,41 +62,58 @@ function fetchDetail(code, list) {
       .then(function(body) {
         var $ = cheerio.load(body);
         var $rows = $('tbody tr');
+        var list = [];
         for (var i = 0, l = $rows.length; i < l; i++) {
           var row = $rows[i];
           var $cols = $(row).find('td');
           var value = +$($cols[1]).text().trim();
           list.push(value);
         }
+        return list;
       })
       promises.push(promise);
     }(i));
   }
-  return Promise.all(promises);
+  return Promise.all(promises)
+  .then(function(pages) {
+    var merged = Array.prototype.apply([], pages);
+    //var merged = [];
+    //for (var i = 0, l = pages.length; i < l; i++) {
+      //var list = pages[i];
+      //for (var j = 0, l = list.length; j < l; j++) {
+        //var value = list[j];
+        //merged.push(value);
+      //}
+    //}
+    return merged;
+  });
 }
 
 var queue = Promise.resolve();
 function fetchToSuccess(url) {
-  queue = queue.then(function(data) {
+  //queue = queue.then(function(data) {
     return fetch(
       url,
       {
-        timeout: 500
+        headers: {
+          'connection': 'keep-alive',
+        }
+        //timeout: 500,
       }
     )
     .then(function(res) {
       if (res.status >= 400) {
-        throw Error('HTTP status code should not be greater than 400');
+        throw Error(`Got HTTP status code ${res.status}, it should not be greater than 400`);
       }
       return res;
     })
     .catch(function(err) {
       console.error(err);
-      queue = Promise.resolve();
+      //queue = Promise.resolve();
       return fetchToSuccess(url);
     })
-  });
-  return queue;
+  //});
+  //return queue;
 }
 
 var loaderList = [];
