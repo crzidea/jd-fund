@@ -6,6 +6,7 @@ var Table = require('cli-table-zh');
 var cheerio = require('cheerio');
 var qs = require('qs');
 var config =require('./config.json');
+var debug = require('debug')('jd-fund');
 
 var table = new Table({
   head: config.columns,
@@ -76,15 +77,7 @@ function fetchDetail(code) {
   }
   return Promise.all(promises)
   .then(function(pages) {
-    var merged = Array.prototype.apply([], pages);
-    //var merged = [];
-    //for (var i = 0, l = pages.length; i < l; i++) {
-      //var list = pages[i];
-      //for (var j = 0, l = list.length; j < l; j++) {
-        //var value = list[j];
-        //merged.push(value);
-      //}
-    //}
+    var merged = Array.prototype.concat.apply([], pages);
     return merged;
   });
 }
@@ -108,7 +101,7 @@ function fetchToSuccess(url) {
       return res;
     })
     .catch(function(err) {
-      console.error(err);
+      debug(err);
       //queue = Promise.resolve();
       return fetchToSuccess(url);
     })
@@ -154,5 +147,5 @@ Promise.all(loaderList)
   process.stdout.write('\n');
 })
 .catch(function(err) {
-  console.error(err.stack);
+  debug(err);
 });
